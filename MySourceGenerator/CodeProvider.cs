@@ -8,7 +8,7 @@ namespace MySourceGenerator;
 
 public static class CodeProvider
 {
-    public static ClassDeclarationSyntax? GenerateQueryPartialClass(this GeneratorSyntaxContext context)
+    public static IdentifierNameSyntax? GenerateQueryPartialClass(this GeneratorSyntaxContext context)
     {
         return null;
     }

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -13,14 +14,24 @@ public class FirstSourceGenerator : IIncrementalGenerator
     {
         //throw new Exception("Test exception!"); // delete me after test
 
-        IncrementalValuesProvider<ClassDeclarationSyntax> enumDeclarations = context.SyntaxProvider
+        IncrementalValuesProvider<IdentifierNameSyntax> classesWithLinkToEntity = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: (s, _) => HasILinkToEntity(s), // select enums with attributes
+                predicate: (s, _) => LinkToEntityEntry(s), // select enums with attributes
                 transform: static (ctx, _) => ctx.GenerateQueryPartialClass())
             .Where(static m => m is not null)!; // filter out attributed enums that we don't care about
 
+        context.RegisterSourceOutput(classesWithLinkToEntity, BuildNewCode);
     }
 
-    private bool HasILinkToEntity(SyntaxNode node)
-        => node is ClassDeclarationSyntax;
+    private bool LinkToEntityEntry(SyntaxNode node)
+    {
+        var result = node is IdentifierNameSyntax { Identifier.Value: "ILinkToEntity" };
+        return node is IdentifierNameSyntax { Identifier.Value: "ILinkToEntity" };
+    }
+
+    private void BuildNewCode(SourceProductionContext context,
+        IdentifierNameSyntax iLinkToEntity)
+    {
+
+    }
 }

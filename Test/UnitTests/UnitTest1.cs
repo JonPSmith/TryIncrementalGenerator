@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -34,8 +35,6 @@ namespace ServiceLayer
 }");
 
         var root = syntaxTree.GetRoot();
-        var childs = root.DescendantNodes();
-
-
+        var childs = root.DescendantNodes().ToList();
     }
 }
