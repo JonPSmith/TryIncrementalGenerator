@@ -26,7 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DataLayer\DataLayer.csproj" />
+    <ProjectReference Include="..\HelperTypes\HelperTypes.csproj" />
     <ProjectReference Include="..\MySourceGenerator\MySourceGenerator.csproj" OutputItemType="Analyzer" />
+    <ProjectReference Include="..\ServiceLayer\ServiceLayer.csproj" />
   </ItemGroup>
 
 </Project>

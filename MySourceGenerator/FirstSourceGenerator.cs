@@ -3,6 +3,7 @@
 
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace MySourceGenerator;
@@ -10,11 +11,13 @@ namespace MySourceGenerator;
 [Generator]
 public class FirstSourceGenerator : IIncrementalGenerator
 {
+    public Action<string> Logger { get; set; }
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         //throw new Exception("Test exception!"); // delete me after test
 
-        IncrementalValuesProvider<IdentifierNameSyntax> classesWithLinkToEntity = context.SyntaxProvider
+        IncrementalValuesProvider<GenericNameSyntax> classesWithLinkToEntity = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: (s, _) => LinkToEntityEntry(s), // select enums with attributes
                 transform: static (ctx, _) => ctx.GenerateQueryPartialClass())
@@ -25,12 +28,14 @@ public class FirstSourceGenerator : IIncrementalGenerator
 
     private bool LinkToEntityEntry(SyntaxNode node)
     {
-        var result = node is IdentifierNameSyntax { Identifier.Value: "ILinkToEntity" };
-        return node is IdentifierNameSyntax { Identifier.Value: "ILinkToEntity" };
+        Logger?.Invoke($"{node.GetType().Name}, {node.FullSpan}");
+        if (node is GenericNameSyntax genericName && genericName.Identifier.ValueText == "ILinkToEntity")
+            return true;
+        return false;
     }
 
     private void BuildNewCode(SourceProductionContext context,
-        IdentifierNameSyntax iLinkToEntity)
+        GenericNameSyntax iLinkToEntity)
     {
 
     }

@@ -3,11 +3,20 @@
 
 using Test.Helpers;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Test.UnitTests;
 
 public class TestFirstSourceGenerator
 {
+    private readonly ITestOutputHelper _output;
+
+    /// <summary>Initializes a new instance of the <see cref="T:System.Object" /> class.</summary>
+    public TestFirstSourceGenerator(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     private string testCode = @"using DataLayer;
 using HelperTypes;
 
@@ -27,7 +36,7 @@ namespace ServiceLayer
         //SETUP
 
         //ATTEMPT
-        var result = testCode.GetGeneratedOutput();
+        var result = testCode.GetGeneratedOutput(_output.WriteLine);
 
         //VERIFY
     }
