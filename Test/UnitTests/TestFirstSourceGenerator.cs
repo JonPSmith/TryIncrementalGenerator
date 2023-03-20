@@ -8,6 +8,7 @@ using System.Reflection;
 using Test.Helpers;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Extensions.AssertExtensions;
 
 namespace Test.UnitTests;
 
@@ -21,7 +22,7 @@ public class TestFirstSourceGenerator
         _output = output;
     }
 
-    private string testCode = @"using DataLayer;
+    private string oneClassSource = @"using DataLayer;
 using HelperTypes;
 
 namespace ServiceLayer
@@ -32,17 +33,59 @@ namespace ServiceLayer
         public string? Name { get; set; }
     }
 }";
+    private string twoClassesSource = @"using DataLayer;
+using HelperTypes;
 
+namespace ServiceLayer
+{
+    public partial class PersonNameDto : ILinkToEntity<Person>
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+    }
+}
+using DataLayer;
+using HelperTypes;
+
+namespace ServiceLayer
+{
+    public partial class AddressDto : ILinkToEntity<Address>
+    {
+        public int Id { get; set; }
+        public string? ZipCode { get; set; }
+    }
+}";
 
     [Fact]
-    public void Test1()
+    public void TestGetType()
     {
         //SETUP
-        var xxx = Type.GetType("DataLayer.Person, DataLayer");
-        var yyy = xxx.GetProperties();
 
         //ATTEMPT
-        var result = testCode.GetGeneratedOutput(_output.WriteLine);
+        var databaseClassType = Type.GetType("DataLayer.Person, DataLayer");
+
+        //VERIFY
+        databaseClassType.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void TestOneClassGenerate()
+    {
+        //SETUP
+
+        //ATTEMPT
+        var result = oneClassSource.GetGeneratedOutput(_output.WriteLine);
+
+        //VERIFY
+    }
+
+    [Fact]
+    public void TestTwoClassesGenerate()
+    {
+        //SETUP
+
+        //ATTEMPT
+        var result = twoClassesSource.GetGeneratedOutput(_output.WriteLine);
 
         //VERIFY
     }

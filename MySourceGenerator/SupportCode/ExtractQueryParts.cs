@@ -16,27 +16,28 @@ namespace MySourceGenerator.SupportCode
         /// This contains the namespace of where the ILinkToEntity{T} was found.
         /// This is needed when the provided database access code is built 
         /// </summary>
-        public string NamespaceName { get; }
+        public string? NamespaceName { get; }
 
         /// <summary>
         /// This contains of the type of the class that is used in the generated query
         /// </summary>
-        public Type QueryType { get; }
+        public Type? QueryType { get; }
 
         /// <summary>
         /// This contains all the using names in the code containing the ILinkToEntity{T} was found.
         /// These are used to find the {T} type 
         /// </summary>
-        public Type DatabaseType { get; }
+        public Type? DatabaseType { get; }
 
 
 
         /// <summary>
         /// This runs back up the parent node looking for
         /// 1. This finds the name of the type in the ILinkToEntity{T}
-        /// 2. The <see cref="NamespaceDeclarationSyntax"/> node, which has the namespace of this complied unit 
+        /// 2. The <see cref="NamespaceDeclarationSyntax"/> node, which has the namespace of this complied unit
         /// 3. The <see cref="CompilationUnitSyntax"/> node, which defines what projects are used in the complied unit
-        ///    and it looks for type of <see cref="DatabaseType"/> used in the query.
+        ///   NOTE: stage 3 must run after stage 2, as its working up the the parents.  
+        /// 4. The type of <see cref="DatabaseType"/> used in the query is formed from stage 1 and 3.
         /// </summary>
         /// <param name="startNode">This is where the ILinkToEntity{T} was found.</param>
         /// <returns></returns>
@@ -45,7 +46,7 @@ namespace MySourceGenerator.SupportCode
             var node = startNode;
 
             //-----------------------------------------------------------
-            //This finds the name of the type in the ILinkToEntity{T}
+            //1. This finds the name of the type in the ILinkToEntity{T}
             if (startNode.Parent is not SimpleBaseTypeSyntax simpleBase)
                 //Error: Expected a SimpleBaseTypeSyntax
                 return;
@@ -61,35 +62,41 @@ namespace MySourceGenerator.SupportCode
                     nameOfInterface.Length - StartOfILinkToEntity.Length - 1);
 
             //----------------------------------------------------------
-            //2. Find the query database 
+            //2. Find the query database name
 
             //This goes up the parents to find the  and extract the namespace name
-            while (node != null && NamespaceName == null)
+            string? className = null; 
+            while (node != null && className == null)
             {
                 if (node is ClassDeclarationSyntax classDeclaration)
                 {
-                    //QueryType = classDeclaration
+                    className = classDeclaration.Identifier.ValueText;
+                    break;
                 }
-                else
-                    node = node.Parent;
+                node = node.Parent;
             }
 
             //----------------------------------------------------------
-            //2. Get the namespace of the complied unit containing the ILinkToEntity{T}
+            //3. Get the namespace of the complied unit containing the ILinkToEntity{T}
 
             //This goes up the parents to find the  and extract the namespace name
             while (node != null && NamespaceName == null)
             {
-                if (node is NamespaceDeclarationSyntax namespaceDec)
+                if (node is NamespaceDeclarationSyntax)
                 {
-                    NamespaceName = namespaceDec.NamespaceKeyword.ValueText;
+                    NamespaceName = ((IdentifierNameSyntax?)node.ChildNodes()
+                        .FirstOrDefault(x => x is IdentifierNameSyntax))?.Identifier.Text;
+                    if (className != null && NamespaceName != null)
+                    {
+                        QueryType =  Type.GetType($"{NamespaceName}.{className}, {NamespaceName}");
+                    }
+                    break;
                 }
-                else
-                    node = node.Parent;
+                node = node.Parent;
             }
 
             //----------------------------------------------------------
-            //3. This finds the root of this unit, which has the "usings", and then uses
+            //4. This finds the root of this unit, which has the "usings", and then uses
             //   a combination of the using assembly names and the class name to find the correct database type
 
             //see https://learn.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/get-started/syntax-analysis#traversing-trees
@@ -99,12 +106,14 @@ namespace MySourceGenerator.SupportCode
                 {
                     foreach (var usingDir in root.Usings)
                     {
-
-                        var foundType = Type.GetType($"{usingDir}.{typeName}, {usingDir}");
+                        var usingName = usingDir.Name.ToString();
+                        var foundType = Type.GetType($"{usingName}.{typeName}, {usingName}");
                         if (foundType != null)
+                        {
                             DatabaseType = foundType;
+                            break;
+                        }
                     }
-                    break;
                 }
 
                 node = node.Parent;
