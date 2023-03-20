@@ -19,9 +19,9 @@ public class FirstSourceGenerator : IIncrementalGenerator
 
         IncrementalValuesProvider<GenericNameSyntax> classesWithLinkToEntity = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: (s, _) => LinkToEntityEntry(s), // select enums with attributes
+                predicate: (s, _) => LinkToEntityEntry(s),
                 transform: static (ctx, _) => ctx.GenerateQueryPartialClass())
-            .Where(static m => m is not null)!; // filter out attributed enums that we don't care about
+            .Where(static m => m is not null)!;
 
         context.RegisterSourceOutput(classesWithLinkToEntity, BuildNewCode);
     }

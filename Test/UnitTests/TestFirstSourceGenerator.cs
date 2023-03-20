@@ -1,6 +1,10 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Test.Helpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -34,6 +38,8 @@ namespace ServiceLayer
     public void Test1()
     {
         //SETUP
+        var xxx = Type.GetType("DataLayer.Person, DataLayer");
+        var yyy = xxx.GetProperties();
 
         //ATTEMPT
         var result = testCode.GetGeneratedOutput(_output.WriteLine);
