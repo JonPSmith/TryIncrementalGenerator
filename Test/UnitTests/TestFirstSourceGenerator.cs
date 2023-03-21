@@ -27,7 +27,7 @@ using HelperTypes;
 
 namespace ServiceLayer
 {
-    public partial class PersonNameDto : ILinkToEntity<Person>
+    public partial class PersonNameDto : IDbAndEntity<DemoDbContext, Person>
     {
         public int Id { get; set; }
         public string? Name { get; set; }
@@ -38,7 +38,7 @@ using HelperTypes;
 
 namespace ServiceLayer
 {
-    public partial class PersonNameDto : ILinkToEntity<Person>
+    public partial class PersonNameDto : IDbAndEntity<DemoDbContext, Person>
     {
         public int Id { get; set; }
         public string? Name { get; set; }
@@ -49,7 +49,7 @@ using HelperTypes;
 
 namespace ServiceLayer
 {
-    public partial class AddressDto : ILinkToEntity<Address>
+    public partial class AddressDto : IDbAndEntity<DemoDbContext, Address>
     {
         public int Id { get; set; }
         public string? ZipCode { get; set; }

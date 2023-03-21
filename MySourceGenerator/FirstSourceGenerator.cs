@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using MySourceGenerator.SupportCode;
 
 namespace MySourceGenerator;
 
@@ -17,25 +18,23 @@ public class FirstSourceGenerator : IIncrementalGenerator
     {
         //throw new Exception("Test exception!"); // delete me after test
 
-        IncrementalValuesProvider<GenericNameSyntax> classesWithLinkToEntity = context.SyntaxProvider
+        IncrementalValuesProvider<ExtractedQueryInfo> classesWithLinkToEntity = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: (s, _) => LinkToEntityEntry(s),
-                transform: static (ctx, _) => ctx.GenerateQueryPartialClass())
+                predicate: (s, _) => FindAllDatabaseAndEntityTypes(s),
+                transform: static (ctx, _) => ctx.GatherDataForBuildingQuery())
             .Where(static m => m is not null)!;
 
         context.RegisterSourceOutput(classesWithLinkToEntity, BuildNewCode);
     }
 
-    private bool LinkToEntityEntry(SyntaxNode node)
+    private bool FindAllDatabaseAndEntityTypes(SyntaxNode node)
     {
         Logger?.Invoke($"{node.GetType().Name}, {node.FullSpan}");
-        if (node is GenericNameSyntax genericName && genericName.Identifier.ValueText == "ILinkToEntity")
-            return true;
-        return false;
+        return node is GenericNameSyntax { Identifier.ValueText: "IDbAndEntity" };
     }
 
     private void BuildNewCode(SourceProductionContext context,
-        GenericNameSyntax iLinkToEntity)
+        ExtractedQueryInfo queryInfo)
     {
 
     }

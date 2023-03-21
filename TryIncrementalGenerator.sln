@@ -11,9 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{6B8DDD87-E0E7-4B58-A3EF-D09AD4D4B1AC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceLayer", "ServiceLayer\ServiceLayer.csproj", "{26D638DF-A57C-4143-BE6A-F39691100719}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HelperTypes", "HelperTypes\HelperTypes.csproj", "{D96127D7-9E76-49B7-A88B-092B83701446}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceLayer", "ServiceLayer\ServiceLayer.csproj", "{26D638DF-A57C-4143-BE6A-F39691100719}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +39,6 @@ Global
 		{26D638DF-A57C-4143-BE6A-F39691100719}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26D638DF-A57C-4143-BE6A-F39691100719}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26D638DF-A57C-4143-BE6A-F39691100719}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D96127D7-9E76-49B7-A88B-092B83701446}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D96127D7-9E76-49B7-A88B-092B83701446}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D96127D7-9E76-49B7-A88B-092B83701446}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D96127D7-9E76-49B7-A88B-092B83701446}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
