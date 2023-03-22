@@ -9,7 +9,7 @@ namespace Test.Helpers;
 
 public static class DemoSourceGeneratorTests
 {
-    public static string? GetGeneratedOutput(this string sourceCode, Action<string> logger = null)
+    public static string? GetGeneratedOutput(this string sourceCode)
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
         var references = AppDomain.CurrentDomain.GetAssemblies()
@@ -25,7 +25,7 @@ public static class DemoSourceGeneratorTests
 
         // Source Generator to test
         var generator = new FirstSourceGenerator();
-        generator.Logger = logger;
+        //generator.Logger = logger;
 
         CSharpGeneratorDriver.Create(generator)
             .RunGeneratorsAndUpdateCompilation(compilation,

@@ -1,10 +1,10 @@
 ﻿// Copyright (c) 2023 Jon P Smith, GitHub: JonPSmith, web: http://www.thereformedprogrammer.net/
 // Licensed under MIT license. See License.txt in the project root for license information.
 
-using System.Collections.Immutable;
+using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using MySourceGenerator.SupportCode;
 
 namespace MySourceGenerator;
@@ -12,7 +12,7 @@ namespace MySourceGenerator;
 [Generator]
 public class FirstSourceGenerator : IIncrementalGenerator
 {
-    public Action<string> Logger { get; set; }
+    //public Action<string>? Logger { get; set; } = null;
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -24,18 +24,22 @@ public class FirstSourceGenerator : IIncrementalGenerator
                 transform: static (ctx, _) => ctx.GatherDataForBuildingQuery())
             .Where(static m => m is not null)!;
 
-        context.RegisterSourceOutput(classesWithLinkToEntity, BuildNewCode);
+        //!!! add 
+        context.RegisterSourceOutput(classesWithLinkToEntity,
+            ExecuteCodeBuilds);
     }
 
     private bool FindAllDatabaseAndEntityTypes(SyntaxNode node)
     {
-        Logger?.Invoke($"{node.GetType().Name}, {node.FullSpan}");
+        //Logger?.Invoke($"{node.GetType().Name}, {node.FullSpan}");
         return node is GenericNameSyntax { Identifier.ValueText: "IDbAndEntity" };
     }
 
-    private void BuildNewCode(SourceProductionContext context,
+    private void ExecuteCodeBuilds(SourceProductionContext context,
         ExtractedQueryInfo queryInfo)
     {
-
+        var code = queryInfo.CreateReadCode();
+        if (code == null) return;
+        context.AddSource($"{queryInfo.QueryType!.Name}.g.cs", SourceText.From(code, Encoding.UTF8));
     }
 }

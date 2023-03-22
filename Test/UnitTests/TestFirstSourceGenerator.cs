@@ -23,7 +23,8 @@ public class TestFirstSourceGenerator
     }
 
     private string oneClassSource = @"using DataLayer;
-using HelperTypes;
+using DataLayer.DatabaseClasses;
+using DataLayer.EfCode;
 
 namespace ServiceLayer
 {
@@ -34,7 +35,8 @@ namespace ServiceLayer
     }
 }";
     private string twoClassesSource = @"using DataLayer;
-using HelperTypes;
+using DataLayer.DatabaseClasses;
+using DataLayer.EfCode;
 
 namespace ServiceLayer
 {
@@ -74,7 +76,7 @@ namespace ServiceLayer
         //SETUP
 
         //ATTEMPT
-        var result = oneClassSource.GetGeneratedOutput(_output.WriteLine);
+        var result = oneClassSource.GetGeneratedOutput();
 
         //VERIFY
     }
@@ -85,7 +87,7 @@ namespace ServiceLayer
         //SETUP
 
         //ATTEMPT
-        var result = twoClassesSource.GetGeneratedOutput(_output.WriteLine);
+        var result = twoClassesSource.GetGeneratedOutput();
 
         //VERIFY
     }

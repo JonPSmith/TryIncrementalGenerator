@@ -8,32 +8,6 @@ namespace MySourceGenerator.SupportCode
 {
     public class ExtractedQueryInfo
     {
-        private sealed class ExtractedQueryInfoEqualityComparer : IEqualityComparer<ExtractedQueryInfo>
-        {
-            public bool Equals(ExtractedQueryInfo x, ExtractedQueryInfo y)
-            {
-                if (ReferenceEquals(x, y)) return true;
-                if (ReferenceEquals(x, null)) return false;
-                if (ReferenceEquals(y, null)) return false;
-                if (x.GetType() != y.GetType()) return false;
-                return x.NamespaceName == y.NamespaceName && x.UsingProjectNames.Equals(y.UsingProjectNames) &&
-                       Equals(x.QueryType, y.QueryType) && Equals(x.DatabaseType, y.DatabaseType);
-            }
-
-            public int GetHashCode(ExtractedQueryInfo obj)
-            {
-                unchecked
-                {
-                    var hashCode = (obj.NamespaceName != null ? obj.NamespaceName.GetHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ obj.UsingProjectNames.GetHashCode();
-                    hashCode = (hashCode * 397) ^ (obj.QueryType != null ? obj.QueryType.GetHashCode() : 0);
-                    hashCode = (hashCode * 397) ^ (obj.DatabaseType != null ? obj.DatabaseType.GetHashCode() : 0);
-                    return hashCode;
-                }
-            }
-        }
-
-        public static IEqualityComparer<ExtractedQueryInfo> ExtractedQueryInfoComparer { get; } = new ExtractedQueryInfoEqualityComparer();
 
         /// <summary>
         /// Used in Distinct to remove duplicates
@@ -45,15 +19,25 @@ namespace MySourceGenerator.SupportCode
 
 
         /// <summary>
-        /// This contains the namespace of where the IDbAndEntity{T} was found.
+        /// This contains the namespace of where the IDbAndEntity{TContext, TEntity} was found.
         /// This is needed when the provided database access code is built 
         /// </summary>
         public string? NamespaceName { get; }
 
         /// <summary>
-        /// This contains the using namespaces in the code where the IDbAndEntity{T} was found.
+        /// This contains the using namespaces in the code where the IDbAndEntity{TContext, TEntity} was found.
         /// </summary>
-        public IList<string> UsingProjectNames { get; }
+        public IList<string>? UsingProjectNames { get; }
+
+        /// <summary>
+        /// This holds the Type of TContext in the IDbAndEntity{TContext, TEntity} type 
+        /// </summary>
+        public Type? DbContextType { get; private set; }
+
+        /// <summary>
+        /// This holds the Type of TEntity in the IDbAndEntity{TContext, TEntity} type 
+        /// </summary>
+        public Type? EntityType { get; private set; }
 
         /// <summary>
         /// This contains of the type of the class that is used in the generated query
@@ -61,32 +45,26 @@ namespace MySourceGenerator.SupportCode
         public Type? QueryType { get; }
 
         /// <summary>
-        /// This contains all the using names in the code containing the IDbAndEntity{T} was found.
-        /// These are used to find the {T} type 
-        /// </summary>
-        public Type? DatabaseType { get; }
-
-        /// <summary>
         /// This is valid if all three parts aren't null
         /// </summary>
-        public bool IsValid => NamespaceName != null && UsingProjectNames != null && QueryType != null && DatabaseType != null;
+        public bool IsValid => NamespaceName != null && UsingProjectNames != null && QueryType != null && EntityType != null;
 
         /// <summary>
         /// This runs back up the parent node looking for
-        /// 1. This finds the name of the type in the IDbAndEntity{T}
+        /// 1. This finds the name of the type in the IDbAndEntity{TContext, TEntity}
         /// 2. The <see cref="NamespaceDeclarationSyntax"/> node, which has the namespace of this complied unit
         /// 3. The <see cref="CompilationUnitSyntax"/> node, which defines what projects are used in the complied unit
         ///   NOTE: stage 3 must run after stage 2, as its working up the the parents.  
-        /// 4. The type of <see cref="DatabaseType"/> used in the query is formed from stage 1 and 3.
+        /// 4. The type of <see cref="EntityType"/> used in the query is formed from stage 1 and 3.
         /// </summary>
-        /// <param name="startNode">This is where the IDbAndEntity{T} was found.</param>
+        /// <param name="startNode">This is where the IDbAndEntity{TContext, TEntity} was found.</param>
         /// <returns></returns>
         public ExtractedQueryInfo(SyntaxNode startNode)
         {
             var node = startNode;
 
             //-----------------------------------------------------------
-            //1. This finds the name of the type in the IDbAndEntity{T}
+            //1. This finds the name of the type in the IDbAndEntity{TContext, TEntity}
             if (startNode.Parent is not SimpleBaseTypeSyntax simpleBase)
                 //Error: Expected a SimpleBaseTypeSyntax
                 return;
@@ -97,9 +75,14 @@ namespace MySourceGenerator.SupportCode
                 //Error: Should be IDbAndEntity<>
                 return;
 
-            var typeName = nameOfInterface
+
+            var innerParts = nameOfInterface
                 .Substring(StartOfIDbAndEntity.Length,
                     nameOfInterface.Length - StartOfIDbAndEntity.Length - 1);
+
+            //The innerParts has the form "DbContextTypeName, EntityClassName"
+            var typeNames = innerParts.Split(',')
+                .Select(x => x.Trim()).ToArray();
 
             //----------------------------------------------------------
             //2. Find the query database name
@@ -117,7 +100,7 @@ namespace MySourceGenerator.SupportCode
             }
 
             //----------------------------------------------------------
-            //3. Get the namespace of the complied unit containing the IDbAndEntity{T}
+            //3. Get the namespace of the complied unit containing the IDbAndEntity{TContext, TEntity}
 
             //This goes up the parents to find the  and extract the namespace name
             while (node != null && NamespaceName == null)
@@ -145,19 +128,35 @@ namespace MySourceGenerator.SupportCode
                 if (node is CompilationUnitSyntax root)
                 {
                     UsingProjectNames = root.Usings.Select(x => x.Name.ToString()).ToList();
-                    foreach (var usingName in UsingProjectNames)
-                    {
-                        var foundType = Type.GetType($"{usingName}.{typeName}, {usingName}");
-                        if (foundType != null)
-                        {
-                            DatabaseType = foundType;
-                            break;
-                        }
-                    }
+                    FindClassTypeByName(typeNames, 0); //finds the DbContext type
+                    FindClassTypeByName(typeNames, 1); //finds the entity type
                 }
 
                 node = node.Parent;
             }
         }
+
+        private Type? FindClassTypeByName(string[] typeNames, int index)
+        {
+            foreach (var usingName in UsingProjectNames!)
+            {
+                var projectName = usingName.Contains('.') 
+                    ? usingName.Substring(0, usingName.IndexOf('.'))
+                    : usingName;
+                var typeFound = Type.GetType($"{usingName}.{typeNames[index]}, {projectName}");
+                if (typeFound != null)
+                {
+                    if (index == 0)
+                        DbContextType = typeFound;
+                    else
+                        EntityType = typeFound;
+                    break;
+                }
+            }
+
+            return null;
+        }
     }
+
+
 }
